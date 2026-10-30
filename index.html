@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<title>益智贪吃蛇 · 边玩边学</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','HarmonyOS Sans SC','Microsoft YaHei',sans-serif;background:linear-gradient(160deg,#a8e6cf 0%,#ffd3b6 40%,#ffaaa5 75%,#ff8b94 100%);touch-action:none;overscroll-behavior:none}
+body{display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+
+/* ==== 首页 ==== */
+#home{width:100%;max-width:520px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.home-title{font-size:42px;font-weight:900;color:#fff;text-shadow:0 3px 0 #ff6b6b,0 6px 12px rgba(0,0,0,.15);letter-spacing:2px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.home-sub{font-size:15px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.2);margin-bottom:28px;text-align:center;line-height:1.6}
+.snake-icon{font-size:48px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.2))}
+.diff-group{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+.diff-card{background:rgba(255,255,255,.85);backdrop-filter:blur(10px);border-radius:18px;padding:18px 10px;text-align:center;cursor:pointer;transition:all .25s cubic-bezier(.2,.8,.2,1);border:3px solid transparent;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.diff-card:active{transform:scale(.95)}
+.diff-card.selected{border-color:#ff6b6b;background:#fff;box-shadow:0 6px 20px rgba(255,107,107,.3);transform:translateY(-2px)}
+.diff-emoji{font-size:32px;margin-bottom:6px}
+.diff-name{font-size:17px;font-weight:700;color:#333;margin-bottom:4px}
+.diff-desc{font-size:12px;color:#888;line-height:1.4}
+
+.stat-group{width:100%;display:flex;gap:10px;margin-bottom:24px}
+.stat-card{flex:1;background:rgba(255,255,255,.7);border-radius:14px;padding:12px;text-align:center}
+.stat-label{font-size:12px;color:#888;margin-bottom:4px}
+.stat-val{font-size:22px;font-weight:900;color:#ff6b6b}
+
+.start-btn{width:100%;padding:16px;border:none;border-radius:50px;background:linear-gradient(135deg,#ff6b6b,#ee5a6f);color:#fff;font-size:20px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(255,107,107,.4);transition:all .2s;letter-spacing:2px}
+.start-btn:active{transform:scale(.97);box-shadow:0 3px 10px rgba(255,107,107,.4)}
+.tip{font-size:12px;color:rgba(255,255,255,.8);margin-top:14px;text-align:center;line-height:1.5}
+
+/* ==== 答题页 ==== */
+#quiz{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(160deg,#a8e6cf 0%,#ffd3b6 40%,#ffaaa5 75%,#ff8b94 100%);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;z-index:100}
+.quiz-inner{width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center}
+.quiz-badge{display:inline-flex;align-items:center;gap:4px;background:#fff;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;color:#ff6b6b;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.quiz-badge.challenge{background:linear-gradient(90deg,#ffd700,#ffaa00);color:#fff}
+.quiz-question{background:rgba(255,255,255,.92);border-radius:20px;padding:24px 20px;width:100%;box-shadow:0 8px 24px rgba(0,0,0,.1);margin-bottom:20px;min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.quiz-img{font-size:56px;margin-bottom:8px;line-height:1}
+.quiz-text{font-size:20px;font-weight:700;color:#333;text-align:center;line-height:1.6}
+.options{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.opt-btn{padding:14px 10px;border:3px solid rgba(255,255,255,.6);background:rgba(255,255,255,.8);border-radius:14px;font-size:17px;font-weight:700;color:#333;cursor:pointer;transition:all .2s;backdrop-filter:blur(8px)}
+.opt-btn:active{transform:scale(.96)}
+.opt-btn.correct{background:#4caf50;border-color:#4caf50;color:#fff;animation:pop .4s cubic-bezier(.2,.8,.2,1)}
+.opt-btn.wrong{background:#f44336;border-color:#f44336;color:#fff;animation:shake .4s}
+.opt-btn:disabled{pointer-events:none;opacity:.85}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.feedback{width:100%;padding:14px 18px;border-radius:14px;font-size:15px;font-weight:600;text-align:center;margin-bottom:12px;line-height:1.5;display:none}
+.feedback.right{display:block;background:rgba(76,175,80,.15);color:#2e7d32;border:2px solid rgba(76,175,80,.3)}
+.feedback.wrong{display:block;background:rgba(244,67,54,.12);color:#c62828;border:2px solid rgba(244,67,54,.25)}
+.feedback .emoji{font-size:20px;margin-right:4px}
+.quiz-actions{width:100%;display:flex;gap:10px}
+.skip-btn,.next-btn,.retry-btn{flex:1;padding:14px;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;display:none}
+.retry-btn{background:linear-gradient(135deg,#ffa726,#ff9800);color:#fff;box-shadow:0 4px 12px rgba(255,152,0,.3);display:block}
+.skip-btn{background:rgba(255,255,255,.7);color:#666}
+.next-btn{background:linear-gradient(135deg,#ff6b6b,#ee5a6f);color:#fff;box-shadow:0 4px 12px rgba(255,107,107,.3)}
+.skip-btn:active,.next-btn:active{transform:scale(.97)}
+
+/* 星星奖励动画 */
+.stars-rain{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:10}
+.star-particle{position:absolute;font-size:24px;animation:starfly 1.2s ease-out forwards}
+@keyframes starfly{0%{opacity:1;transform:translate(0,0) scale(1) rotate(0deg)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.4) rotate(360deg)}}
+
+/* ==== 游戏页 ==== */
+#game{width:100%;height:100%;display:none;flex-direction:column;align-items:center;padding:8px 8px 4px}
+#game.show{display:flex}
+.hud{width:100%;max-width:520px;display:flex;justify-content:space-between;align-items:center;padding:8px 12px;margin-bottom:6px;background:rgba(255,255,255,.75);backdrop-filter:blur(10px);border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.hud-item{display:flex;flex-direction:column;align-items:center;flex:1}
+.hud-label{font-size:11px;color:#888;font-weight:600}
+.hud-val{font-size:18px;font-weight:900;color:#ff6b6b}
+.hud-center{font-size:22px}
+.pause-btn{width:38px;height:38px;flex:0 0 auto;margin-left:6px;border-radius:50%;background:rgba(255,255,255,.85);border:none;font-size:16px;color:#666;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.1);display:none;align-items:center;justify-content:center}
+.pause-btn:active{transform:scale(.9)}
+
+/* 游戏区 */
+.play-area{width:100%;flex:1;min-height:0;display:none}
+/* 竖屏：play-area只放canvas-wrap（方向键在底部）*/
+@media (orientation:portrait){
+  .play-area{display:flex;align-items:center;justify-content:center}
+  .canvas-wrap{width:100%;max-width:520px;height:100%}
+}
+.canvas-wrap{position:relative;width:100%;max-width:520px;flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+#board{background:#e8f5e9;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.12),inset 0 0 0 3px rgba(255,255,255,.6);touch-action:none;display:block}
+#board.obstacle{background:#f1f8e9}
+
+/* 竖屏方向键（底部十字）*/
+.dpad{width:100%;max-width:min(280px,72vw);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:6px;padding:8px 0 4px}
+.dpad-btn{aspect-ratio:1;border:none;border-radius:14px;background:rgba(255,255,255,.8);font-size:24px;font-weight:700;color:#555;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.08);transition:all .1s;display:flex;align-items:center;justify-content:center}
+.dpad-btn:active{background:#ff6b6b;color:#fff;transform:scale(.9);box-shadow:0 1px 4px rgba(255,107,107,.3)}
+.dpad-center{background:rgba(255,107,107,.15);font-size:14px;color:#ff6b6b;font-weight:700;aspect-ratio:1}
+
+/* 横屏方向键（左右两侧）默认隐藏，横屏时显示 */
+.dpad-side{display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:0 10px;flex:0 0 auto}
+.dpad-side .dpad-btn{width:58px;height:58px;font-size:22px;border-radius:16px}
+.dpad-side .dpad-center{width:58px;height:58px;font-size:14px;background:rgba(255,107,107,.15);color:#ff6b6b}
+.dpad-side .lr-row{display:flex;gap:10px}
+.dpad-side .lr-row .dpad-btn{width:58px;height:58px}
+
+/* ==== 暂停 / 结束遮罩 ==== */
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+.overlay.show{display:flex}
+.dialog{background:#fff;border-radius:24px;padding:28px 24px;width:100%;max-width:360px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.2)}
+.dialog-emoji{font-size:56px;margin-bottom:8px}
+.dialog-title{font-size:24px;font-weight:900;color:#333;margin-bottom:6px}
+.dialog-msg{font-size:15px;color:#666;line-height:1.6;margin-bottom:18px}
+.dialog-stats{display:flex;gap:10px;margin-bottom:20px}
+.dialog-stat{flex:1;background:#f8f9fa;border-radius:12px;padding:10px}
+.dialog-stat-l{font-size:11px;color:#999;margin-bottom:2px}
+.dialog-stat-v{font-size:20px;font-weight:900;color:#ff6b6b}
+.dialog-btns{display:flex;gap:10px}
+.dialog-btn{flex:1;padding:13px;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s}
+.dialog-btn.primary{background:linear-gradient(135deg,#ff6b6b,#ee5a6f);color:#fff;box-shadow:0 4px 12px rgba(255,107,107,.3)}
+.dialog-btn.secondary{background:#f0f0f0;color:#555}
+.dialog-btn:active{transform:scale(.97)}
+
+/* 错题提醒 */
+.wrong-badge{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-20px);background:#fff3cd;color:#856404;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;z-index:50;opacity:0;transition:all .3s;pointer-events:none;border:2px solid #ffeaa7}
+.wrong-badge.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ==== 横屏适配 ==== */
+@media (orientation:landscape){
+  #home{justify-content:flex-start;padding:10px 18px;max-width:780px}
+  .home-title{font-size:26px;margin-bottom:2px}
+  .snake-icon{font-size:30px}
+  .home-sub{font-size:13px;margin-bottom:12px}
+  .diff-card{padding:12px 8px}
+  .diff-emoji{font-size:24px}
+  .diff-name{font-size:15px}
+  .stat-group{margin-bottom:12px}
+  .stat-card{padding:8px}
+  .stat-val{font-size:18px}
+  .start-btn{padding:12px;font-size:17px}
+  .tip{margin-top:8px}
+  #quiz{overflow-y:auto;justify-content:flex-start;padding:10px}
+  .quiz-badge{margin-bottom:8px;font-size:12px}
+  .quiz-question{padding:12px 14px;min-height:0;margin-bottom:10px}
+  .quiz-img{font-size:32px;margin-bottom:4px}
+  .quiz-text{font-size:16px}
+  .opt-btn{padding:10px;font-size:15px}
+  .feedback{padding:10px 14px;font-size:13px;margin-bottom:8px}
+  .skip-btn,.next-btn,.retry-btn{padding:11px;font-size:15px}
+  /* 横屏：HUD顶部全宽 → 方向键|棋盘|方向键 三栏 */
+  #game.show{display:flex;flex-direction:column;padding:6px;gap:4px;height:100%}
+  .hud{flex:0 0 auto;width:100%;max-width:none;margin:0;padding:6px 12px}
+  .hud-val{font-size:16px}
+  .hud-center{font-size:18px}
+  .play-area{display:flex;flex:1;width:100%;min-height:0;align-items:center;justify-content:center}
+  .canvas-wrap{flex:1;width:auto;height:100%;max-width:none;min-width:0}
+  .dpad-side{display:flex}
+  .dpad-bottom{display:none}
+  .pause-btn{width:34px;height:34px;font-size:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- 首页 -->
+<div id="home">
+  <div class="home-title"><span class="snake-icon">🐍</span>益智贪吃蛇</div>
+  <div class="home-sub">答对题目得奖励分<br>边玩蛇边学知识，加油呀！</div>
+  
+  <div class="diff-group">
+    <div class="diff-card" data-diff="easy">
+      <div class="diff-emoji">🐣</div>
+      <div class="diff-name">简单</div>
+      <div class="diff-desc">12×16格<br>速度慢</div>
+    </div>
+    <div class="diff-card selected" data-diff="medium">
+      <div class="diff-emoji">🐰</div>
+      <div class="diff-name">中等</div>
+      <div class="diff-desc">15×20格<br>速度中</div>
+    </div>
+    <div class="diff-card" data-diff="hard">
+      <div class="diff-emoji">🦁</div>
+      <div class="diff-name">困难</div>
+      <div class="diff-desc">18×24格<br>有障碍物</div>
+    </div>
+  </div>
+  
+  <div class="stat-group">
+    <div class="stat-card">
+      <div class="stat-label">🏆 最高分</div>
+      <div class="stat-val" id="highScore">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">📝 累计答题</div>
+      <div class="stat-val" id="totalAnswered">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">✅ 正确率</div>
+      <div class="stat-val" id="accRate">0%</div>
+    </div>
+  </div>
+  
+  <button class="start-btn" id="startBtn">开始闯关 🚀</button>
+  <div class="tip">💡 每局开始前随机出1道题<br>答错的题目会重复出现，直到连续答对2次<br>📱 横屏会自动切换成更宽的场地</div>
+</div>
+
+<!-- 答题页 -->
+<div id="quiz">
+  <div class="stars-rain" id="starsRain"></div>
+  <div class="quiz-inner">
+    <div class="quiz-badge" id="quizBadge">📚 知识答题</div>
+    <div class="quiz-question">
+      <div class="quiz-img" id="quizImg"></div>
+      <div class="quiz-text" id="quizText">加载中...</div>
+    </div>
+    <div class="options" id="quizOptions"></div>
+    <div class="feedback" id="quizFeedback"></div>
+    <div class="quiz-actions">
+      <button class="retry-btn" id="retryBtn">🔄 换一道题再试</button>
+      <button class="skip-btn" id="skipBtn">先去玩蛇 🐍（不加分）</button>
+      <button class="next-btn" id="nextBtn">开始游戏 🎮</button>
+    </div>
+  </div>
+</div>
+
+<!-- 游戏页 -->
+<div id="game">
+  <div class="hud">
+    <div class="hud-item"><div class="hud-label">得分</div><div class="hud-val" id="scoreVal">0</div></div>
+    <div class="hud-item"><div class="hud-label">长度</div><div class="hud-val" id="lenVal">3</div></div>
+    <div class="hud-item"><div class="hud-label">奖励</div><div class="hud-val" id="bonusVal">0</div></div>
+    <button class="pause-btn" id="pauseBtn">⏸</button>
+  </div>
+  <!-- 横屏专用：棋盘居中 + 方向键分列左右 -->
+  <div class="play-area">
+    <div class="dpad-side dpad-left">
+      <button class="dpad-btn" data-dir="up">▲</button>
+      <div class="dpad-btn dpad-center" id="curDirLand">●</div>
+      <button class="dpad-btn" data-dir="down">▼</button>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="board"></canvas>
+    </div>
+    <div class="dpad-side dpad-right">
+      <button class="dpad-btn _ph" disabled style="visibility:hidden">▲</button>
+      <div class="lr-row">
+        <button class="dpad-btn" data-dir="left">◀</button>
+        <button class="dpad-btn" data-dir="right">▶</button>
+      </div>
+      <button class="dpad-btn _ph" disabled style="visibility:hidden">▼</button>
+    </div>
+  </div>
+  <!-- 竖屏专用：底部十字方向键 -->
+  <div class="dpad dpad-bottom">
+    <div></div>
+    <button class="dpad-btn" data-dir="up">▲</button>
+    <div></div>
+    <button class="dpad-btn" data-dir="left">◀</button>
+    <div class="dpad-btn dpad-center" id="curDir">●</div>
+    <button class="dpad-btn" data-dir="right">▶</button>
+    <div></div>
+    <button class="dpad-btn" data-dir="down">▼</button>
+    <div></div>
+  </div>
+</div>
+
+<!-- 错题提醒 -->
+<div class="wrong-badge" id="wrongBadge">📌 这题之前错过，再试一次！</div>
+
+<!-- 暂停遮罩 -->
+<div class="overlay" id="pauseOverlay">
+  <div class="dialog">
+    <div class="dialog-emoji">⏸️</div>
+    <div class="dialog-title">游戏暂停</div>
+    <div class="dialog-msg">歇一下也没关系～</div>
+    <div class="dialog-btns">
+      <button class="dialog-btn secondary" id="quitBtn">退出游戏</button>
+      <button class="dialog-btn primary" id="resumeBtn">继续游戏</button>
+    </div>
+  </div>
+</div>
+
+<!-- 结束遮罩 -->
+<div class="overlay" id="overOverlay">
+  <div class="dialog">
+    <div class="dialog-emoji" id="overEmoji">🎉</div>
+    <div class="dialog-title" id="overTitle">游戏结束</div>
+    <div class="dialog-msg" id="overMsg">表现不错！</div>
+    <div class="dialog-stats">
+      <div class="dialog-stat"><div class="dialog-stat-l">本局得分</div><div class="dialog-stat-v" id="overScore">0</div></div>
+      <div class="dialog-stat"><div class="dialog-stat-l">蛇长</div><div class="dialog-stat-v" id="overLen">0</div></div>
+      <div class="dialog-stat"><div class="dialog-stat-l">最高分</div><div class="dialog-stat-v" id="overHigh">0</div></div>
+    </div>
+    <div class="dialog-btns">
+      <button class="dialog-btn secondary" id="homeBtn">返回首页</button>
+      <button class="dialog-btn primary" id="againBtn">再玩一局</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ========== 配置 ========== */
+const DIFFICULTY = {
+  easy:   {portrait:[12,16], landscape:[18,12], speed:300, minSpeed:200, speedStep:1, obstacle:false, name:'简单'},
+  medium: {portrait:[15,20], landscape:[22,15], speed:240, minSpeed:140, speedStep:2, obstacle:false, name:'中等'},
+  hard:   {portrait:[18,24], landscape:[26,18], speed:180, minSpeed:100, speedStep:2, obstacle:true,  name:'困难'}
+};
+function isLandscape(){return window.innerWidth>window.innerHeight;}
+const DIR = {up:[0,-1], down:[0,1], left:[-1,0], right:[1,0]};
+const DIR_CN = {up:'上', down:'下', left:'左', right:'右'};
+const FOOD_EMOJI = ['🍎','🍊','🍓','🍇','🍌','🍑','🍒','🥝'];
+const OBSTACLE_EMOJI = '🪨';
+const SNAKE_HEAD_COLOR = '#ff6b6b';
+const SNAKE_BODY_COLOR = '#4ecdc4';
+const BG_COLOR = '#e8f5e9';
+
+/* ========== 状态持久化 ========== */
+const STORE_KEY = 'snake_kids_v1';
+let store = loadStore();
+
+function loadStore(){
+  try{
+    const d = JSON.parse(localStorage.getItem(STORE_KEY)||'{}');
+    return {
+      highScore: d.highScore||0,
+      totalAnswered: d.totalAnswered||0,
+      totalCorrect: d.totalCorrect||0,
+      wrongPool: d.wrongPool||{} // {qid: {streak:0}}
+    };
+  }catch(e){return{highScore:0,totalAnswered:0,totalCorrect:0,wrongPool:{}};}
+}
+function saveStore(){localStorage.setItem(STORE_KEY, JSON.stringify(store));}
+
+/* ========== 题库 ========== */
+// --- 本地静态题库：语文 + 花草树木 ---
+const STATIC_Q = [];
+let qidCounter = 0;
+function addQ(cat, sub, question, img, options, answer, explain, challenge){
+  STATIC_Q.push({
+    id:'q'+(++qidCounter), cat, sub, question, img:img||'',
+    options, answer, explain:explain||'', challenge:!!challenge,
+    gen:false // 非生成题
+  });
+}
+
+// ===== 语文：古诗填空（二上必背古诗）=====
+const poems = [
+  ['白日依山尽，黄河入海流。欲穷____，更上一层楼。','千里目','《登鹳雀楼》王之涣，要看得更远，就要登上更高的地方。'],
+  ['____生紫烟，遥看瀑布挂前川。','日照香炉','《望庐山瀑布》李白，香炉峰在阳光照耀下升起紫色烟雾。'],
+  ['飞流直下三千尺，疑是____落九天。','银河','把瀑布比作从天上落下的银河，形容瀑布特别壮观。'],
+  ['墙角数枝梅，凌寒独自开。遥知不是雪，____暗香来。','为有','《梅花》王安石，远远就知道那不是雪，因为有梅花的清香飘来。'],
+  ['____楼高百尺，手可摘星辰。','危','《夜宿山寺》李白，"危楼"就是高楼的意思。'],
+  ['天苍苍，野茫茫，风吹草低____。','见牛羊','《敕勒歌》，风吹过草原，草弯下来，牛羊就露出来了。"见"读xiàn。'],
+  ['一去二三里，烟村____家。','四五','《山村咏怀》邵雍，是一首用数字写的小诗。'],
+  ['亭台____座，八九十枝花。','六七','同上，从一到十的数字诗。'],
+  ['小时不识月，呼作____盘。','白玉','《古朗月行》李白，小时候不认识月亮，把它叫作白玉盘。'],
+  ['又疑瑶台镜，飞在____端。','青云','同上，又怀疑是神仙用的镜子，飞到了青云之上。']
+];
+poems.forEach(p=>addQ('语文','古诗填空',p[0],'',shuffleArr([p[1],...distractText(p[1])]),p[1],p[2]));
+
+// ===== 语文：多音字（二上高频）=====
+const polyphones = [
+  ['"音乐"中"乐"的读音是？','yuè','"乐"读yuè时指音乐；读lè时指快乐、开心。'],
+  ['"快乐"中"乐"的读音是？','lè','同上。'],
+  ['"长大了"中"长"的读音是？','zhǎng','"长"读zhǎng表示成长；读cháng表示长短。'],
+  ['"长江"中"长"的读音是？','cháng','同上。'],
+  ['"背包"中"背"的读音是？','bēi','"背"读bēi是动词，用背驮东西；读bèi是名词，后背。'],
+  ['"背书"中"背"的读音是？','bèi','读bèi时也指背诵。'],
+  ['"行走"中"行"的读音是？','xíng','"行"读xíng是走路；读háng是行列、银行。'],
+  ['"银行"中"行"的读音是？','háng','同上。'],
+  ['"好客"中"好"的读音是？','hào','"好"读hào是喜爱；读hǎo是好坏。'],
+  ['"好人"中"好"的读音是？','hǎo','同上。'],
+  ['"种田"中"种"的读音是？','zhòng','"种"读zhòng是种植；读zhǒng是种子。'],
+  ['"种子"中"种"的读音是？','zhǒng','同上。'],
+  ['"教书"中"教"的读音是？','jiāo','"教"读jiāo是传授知识；读jiào是教室、教育。'],
+  ['"教室"中"教"的读音是？','jiào','同上。'],
+  ['"重新"中"重"的读音是？','chóng','"重"读chóng是再次；读zhòng是重量。'],
+  ['"重要"中"重"的读音是？','zhòng','同上。']
+];
+const PINYIN_POOL=['yuè','lè','zhǎng','cháng','bēi','bèi','xíng','háng','hào','hǎo','zhòng','zhǒng','jiāo','jiào','chóng','yào','dào','kàn','kān','shǔ','shù','de','dí','zhe','zháo'];
+function distractPinyin(correct){
+  const s=new Set();
+  for(let i=0;i<40&&s.size<3;i++){
+    const w=PINYIN_POOL[Math.floor(Math.random()*PINYIN_POOL.length)];
+    if(w!==correct) s.add(w);
+  }
+  return [...s].slice(0,3);
+}
+polyphones.forEach(p=>addQ('语文','多音字',p[0],'',shuffleArr([p[1],...distractPinyin(p[1])]),p[1],p[2]));
+
+// ===== 语文：《树之歌》树木辨认（emoji 图）=====
+const trees = [
+  ['这是什么树？秋天叶子变红，像手掌一样。', '🌳🍁', '枫树', '枫树秋天叶儿红，是《树之歌》里的名句。'],
+  ['这种树四季常青，不怕寒冷。两只小松鼠常和它做朋友~', '🌲', '松树', '松柏四季披绿装，冬天也不落叶。'],
+  ['这种树的叶子像手掌，长得很高大，传说凤凰喜欢停在它上面。', '🌳', '梧桐树', '梧桐树叶像手掌，课文原句哦。'],
+  ['这种树又高又直，是最常见的大树之一，春天会飘柳絮。', '🌳', '杨树', '杨树高，榕树壮，是《树之歌》开头第一句。'],
+  ['这种树长得很粗壮，有很多气根，常生长在南方。', '🌳', '榕树', '杨树高，榕树壮，榕树的树冠特别大。'],
+  ['这种树喜欢温暖的南方，开的花像火焰一样红。', '🌺🌳', '木棉树', '木棉喜暖在南方，木棉花也叫英雄花。'],
+  ['这种树不怕冷，长在北方边疆，树皮是白色的。', '🌳❄️', '桦树', '桦树耐寒守北疆，白桦树皮是白色的，很好认。'],
+  ['这种树被称为"活化石"，秋天叶子会变成金黄色，叶子像小扇子。', '🍂🌳', '银杏树', '银杏水杉活化石，银杏叶像小扇子。'],
+  ['这种树也叫"活化石"，是中国特有的珍稀树种。', '🌳', '水杉', '银杏水杉活化石，水杉同样是珍稀的古老树种。'],
+  ['秋天开花，花香飘满院子，小花金黄一簇簇。', '🌸🟡', '金桂', '金桂开花满院香，桂花可以做桂花糕哦。'],
+  ['四季常青，和松树是好朋友，常一起种在陵园、寺庙。', '🌲', '柏树', '松柏四季披绿装，柏树也是常青树。']
+];
+trees.forEach(t=>addQ('自然','树木辨认',t[0],t[1],shuffleArr([t[2],...['柳树','桃树','槐树','樟树','桑树','杏树'].filter(x=>x!==t[2]).slice(0,3)]),t[2],t[3]));
+
+// ===== 花草辨认 =====
+const flowers = [
+  ['这是什么花？总是朝着太阳转，种子就是我们爱吃的瓜子。','🌻','向日葵','向日葵会跟着太阳转动方向。'],
+  ['这是什么花？有很多刺，情人节常送，代表爱情。','🌹','玫瑰','玫瑰有刺但特别美，是著名的爱情花。'],
+  ['夏天池塘里开的花，粉色白色都有，叶子圆圆的浮在水上。','🪷','荷花','荷花出淤泥而不染，夏天最常见。'],
+  ['春天公园里一片一片金黄色，长着四个花瓣，是春天的标志。','🌼','油菜花','春天田野里金灿灿的油菜花，还可以榨油。'],
+  ['春天日本和武汉大学最出名的花，粉色花瓣轻轻飘落。','🌸','樱花','樱花花期很短，飘落的时候像下雪。'],
+  ['冬天不怕冷，和竹子、松树一起叫"岁寒三友"，开在雪地里。','🌺❄️','梅花','梅花是冬天开的，越冷越开花。'],
+  ['母亲节常送的花，花瓣层层叠叠，有红、粉、白很多颜色。','🌹','康乃馨','康乃馨代表母爱，母亲节最受欢迎。'],
+  ['秋天开的花，有黄、白等颜色，可以泡菊花茶。','🌼','菊花','秋天赏菊、喝菊花茶，是重阳节的习俗。'],
+  ['叶子扁扁尖尖的，春天最早冒芽，枝条垂下来像长辫子。','🌿','柳树','春天柳树最先发芽，"万条垂下绿丝绦"。'],
+  ['花很小但很香，秋天开花，和"金桂"是一家人。','🟡🌿','桂花','桂花香飘十里，桂花糕、桂花糖都用它做。'],
+  ['国色天香的大花，粉色红色为主，是中国国花候选。','🌺','牡丹','牡丹花开富贵，是花中之王。'],
+  ['长在水里的小草，叶子圆圆的漂在水面，小青蛙最喜欢站在上面。','🪷🌿','荷叶','小青蛙蹲在荷叶上，是夏天最常见的画面。']
+];
+flowers.forEach(f=>addQ('自然','花草辨认',f[0],f[1],shuffleArr([f[2],...['桃花','梨花','兰花','竹子','茉莉','向日葵','玫瑰','荷花','牵牛花','蒲公英'].filter(x=>x!==f[2]).slice(0,3)]),f[2],f[3]));
+
+// ===== 语文：汉字组合/识字（日月明类型）=====
+const chars = [
+  ['"日"+"月"合起来是什么字？','明','日月明，表示光明。'],
+  ['"人"+"木"合起来是什么字？（人靠在树上休息）','休','人靠在树旁，就是休息的休。'],
+  ['"小"+"土"合起来是什么字？','尘','很小的土，就是灰尘的尘。'],
+  ['"田"+"力"合起来是什么字？（在田里出力干活）','男','田里出力的是男人（古代社会分工）。'],
+  ['"不"+"正"合起来是什么字？','歪','不正就是歪的，很形象。'],
+  ['"上"+"下"合起来是什么字？（形容心里不安）','卡','上下连在一起就是卡（qiǎ），卡住了。'],
+  ['"木"+"木"+"木"三个木合起来是什么字？','森','很多树就是森林。'],
+  ['"人"+"人"+"人"三个人合起来是什么字？','众','很多人就是群众。'],
+  ['"口"+"天"合起来是什么字？（张嘴巴吞东西）','吴','口天吴，也是一个姓氏。'],
+  ['"禾"+"火"合起来是什么字？（秋天禾苗熟了像火一样红）','秋','禾苗加火就是秋天的秋。'],
+  ['"门"+"口"合起来是什么字？','问','门口站着问问题。'],
+  ['"又"+"寸"合起来是什么字？','对','对对错错的对。']
+];
+chars.forEach(c=>addQ('语文','汉字识字',c[0],'',shuffleArr([c[1],...['林','从','晶','品','森','男','明','休','尖','看','早'].filter(x=>x!==c[1]).slice(0,3)]),c[1],c[2]));
+
+// ===== 语文：量词（《场景歌》）=====
+const liangci = [
+  ['一（ ）海鸥，填哪个量词对？','只','海鸥是鸟，用"只"。《场景歌》里：一只海鸥，一片沙滩。'],
+  ['一（ ）军舰，填哪个量词对？','艘','大船用"艘"。一艘军舰。'],
+  ['一（ ）鱼塘，填哪个量词对？','方','一方鱼塘，"方"是形容方形鱼塘的量词。'],
+  ['一（ ）垂柳，填哪个量词对？','行','一行垂柳，形容柳树排成一排。'],
+  ['一（ ）翠竹，填哪个量词对？','丛','一丛翠竹，竹子成丛生长。'],
+  ['一（ ）石桥，填哪个量词对？','座','桥用"座"，一座石桥。'],
+  ['一（ ）队旗，填哪个量词对？','面','旗子用"面"，一面队旗。'],
+  ['一（ ）铜号，填哪个量词对？','把','乐器用"把"，一把铜号。'],
+  ['一（ ）"红领巾"（指少先队员），填哪个量词对？','队','一队"红领巾"，一队小朋友。'],
+  ['一（ ）欢笑，填哪个量词对？','片','一片欢笑，形容笑声成片。']
+];
+liangci.forEach(l=>{
+  const opts = shuffleArr([l[1],...['个','条','只','棵','朵','本','张','把','座','方','面','队','丛','行','艘','片'].filter(x=>x!==l[1]).slice(0,3)]);
+  addQ('语文','量词',l[0],'',opts,l[1],l[2]);
+});
+
+// ===== 语文：名言警句（二上日积月累）=====
+const sayings = [
+  ['"己所不欲，勿施于__"，空里填什么？','人','自己不想要的，不要强加给别人。——《论语》'],
+  ['"与朋友交，言而有__"，空里填什么？','信','和朋友交往要说话算数、讲信用。'],
+  ['"不以规矩，不能成方__"，空里填什么？','圆','没有规矩就画不出方和圆，比喻做事要守规则。'],
+  ['"十年树木，__年树人"，空里填什么？','百','种树要十年，培养人才要一百年，形容培养人才不容易。'],
+  ['"树高百尺，叶落归__"，空里填什么？','根','树再高，叶子还是要回到根部，比喻人要不忘根本。'],
+  ['"树无根不长，人无__不立"，空里填什么？','志','树没有根长不大，人没有志向成不了事。']
+];
+sayings.forEach(s=>addQ('语文','名言',s[0],'',shuffleArr([s[1],...['信','人','圆','根','志','百','本','我'].filter(x=>x!==s[1]).slice(0,3)]),s[1],s[2]));
+
+// ===== 辅助：生成干扰项 =====
+function distractText(correct){
+  const pool = ['千里','万里','山中','江上','一轮','白玉','彩云','青山','绿水','明镜','高台','大江','黄河','千山','万水','明月','清风','百花','十里','七里','八成','三日','九天','二月','六月','四时','五湖','四海','三山','百尺','万丈'];
+  const chars = ['人','大','小','上','下','中','口','日','月','木','水','火','土','山','石','田','目','耳','手','足','心','王','天','地','风','云','雨','雪','花','草','林','森','男','女','老','少','多','少','东','西','南','北','左','右','前','后','里','外','早','晚','春','夏','秋','冬','红','黄','蓝','绿','白','黑'];
+  const res = new Set();
+  // 替换第一个字
+  if(correct.length===3){
+    for(let i=0;i<10 && res.size<3;i++){
+      const c = chars[Math.floor(Math.random()*chars.length)];
+      const w = c + correct.slice(1);
+      if(w!==correct) res.add(w);
+    }
+  }
+  for(let i=0;i<60 && res.size<3;i++){
+    const w = pool[Math.floor(Math.random()*pool.length)];
+    if(w!==correct) res.add(w);
+  }
+  return [...res].slice(0,3);
+}
+function shuffleArr(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+/* ========== 数学算法生成题 ========== */
+const MATH_TYPES = ['add_sub','mul','compare','app_pig','app_buy','app_bird','see_formula','see_groups','div_challenge'];
+function genMathQ(forceType){
+  let t;
+  if(forceType && MATH_TYPES.indexOf(forceType)>=0){
+    t = forceType;
+  } else {
+    const types = ['add_sub','mul','compare','app_pig','app_buy','app_bird','see_formula','see_groups'];
+    // 偶尔加除法挑战题
+    if(Math.random()<0.18) types.push('div_challenge');
+    t = types[Math.floor(Math.random()*types.length)];
+  }
+  let q={gen:true,cat:'数学',id:'g'+Date.now()+'_'+Math.random().toString(36).slice(2,7),genType:t};
+
+  const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+
+  if(t==='add_sub'){
+    const op = Math.random()<0.5?'+':'-';
+    let a,b;
+    if(op==='+'){a=rand(10,80);b=rand(10,99-a);}
+    else{a=rand(20,99);b=rand(1,a-1);}
+    q.sub='加减法';
+    q.question=`算一算：${a} ${op} ${b} = ？`;
+    q.img='🧮';
+    const ans = op==='+'?a+b:a-b;
+    q.answer = String(ans);
+    q.options = genNumOpts(ans,4,0,100);
+    q.explain = op==='+'?`${a}加${b}等于${ans}。`: `${a}减${b}等于${ans}。`;
+  }
+  else if(t==='mul'){
+    const a=rand(2,6), b=rand(2,9);
+    q.sub='表内乘法';
+    const mn=Math.max(a,b), mi=Math.min(a,b);
+    q.question=a+' × '+b+' = ？（想一想口诀：___'+mn+mi+'）';
+    q.img='✖️';
+    const ans = a*b;
+    q.answer=String(ans);
+    q.options=genNumOpts(ans,4,4,81);
+    q.explain=`根据乘法口诀，${a}乘${b}等于${ans}。`;
+  }
+  else if(t==='compare'){
+    const a=rand(1,9),b=rand(1,9),c=rand(0,Math.max(a,b)*9);
+    const expr = `${a}×${b}`;
+    const val = a*b;
+    const ops=['>','<','='];
+    const correctOp = val>c?'>':val<c?'<':'=';
+    q.sub='比较大小';
+    q.question=`${expr} ○ ${c}，○里应该填什么？`;
+    q.img='⚖️';
+    q.answer=correctOp;
+    q.options=shuffleArr(['>','<','=','+']).slice(0,4);
+    if(q.options.length<4) q.options=['>','<','=','+'];
+    q.explain=`${a}×${b}=${val}，${val}${val>c?'>':val<c?'<':'='}${c}，所以填"${correctOp}"。`;
+  }
+  else if(t==='app_pig'){
+    const a=rand(5,20),b=rand(3,15);
+    q.sub='应用题';
+    q.question=`🐷 猪圈里有${a}只小猪，又跑来${b}只，一共有几只？`;
+    q.img='🐷';
+    const ans=a+b;q.answer=String(ans);
+    q.options=genNumOpts(ans,4,5,100);
+    q.explain=`原来的${a}只加上新来的${b}只，${a}+${b}=${ans}只。`;
+  }
+  else if(t==='app_buy'){
+    const total=rand(30,90),cost=rand(10,total-5);
+    q.sub='应用题';
+    q.question=`🛒 妈妈带${total}元买文具，花了${cost}元，还剩多少元？`;
+    q.img='🛒';
+    const ans=total-cost;q.answer=String(ans);
+    q.options=genNumOpts(ans,4,1,100);
+    q.explain=`带的${total}元减去花掉的${cost}元，${total}-${cost}=${ans}元。`;
+  }
+  else if(t==='app_bird'){
+    const tree=rand(2,6),each=rand(2,6);
+    q.sub='应用题';
+    q.question=`🌳 路边有${tree}棵树，每棵树上站${each}只小鸟，一共几只小鸟？`;
+    q.img='🐦';
+    const ans=tree*each;q.answer=String(ans);
+    q.options=genNumOpts(ans,4,4,81);
+    q.explain=`${tree}棵树，每棵${each}只，${tree}×${each}=${ans}只。`;
+  }
+  else if(t==='see_formula'){
+    // 看图列式：几捆小棒（每捆10根）+几根
+    const tens=rand(2,7),ones=rand(1,9);
+    q.sub='看图列式';
+    q.img='🟫🟫'.repeat(Math.min(tens,3))+'｜'.repeat(Math.min(ones,5))+(ones>5?'…':'')+(tens>3?'🟫…':'');
+    q.question=`图里有${tens}捆小棒（每捆10根）和${ones}根单独的小棒，一共有几根？`;
+    const ans=tens*10+ones;q.answer=String(ans);
+    q.options=genNumOpts(ans,4,20,99);
+    q.explain=`${tens}捆是${tens*10}根，加${ones}根，一共${ans}根。`;
+  }
+  else if(t==='see_groups'){
+    // 看图列式：乘加/乘减
+    const groups=rand(3,5),each=rand(2,5),extra=rand(1,each-1);
+    q.sub='看图列式';
+    q.img=('🍎'.repeat(each)+' ').repeat(groups)+'🍎'.repeat(extra);
+    q.question=`看图：有${groups}组苹果，每组${each}个，还多${extra}个，一共几个？`;
+    const ans=groups*each+extra;q.answer=String(ans);
+    q.options=genNumOpts(ans,4,6,81);
+    q.explain=`${groups}组每组${each}个是${groups*each}个，加上多的${extra}个，${groups*each}+${extra}=${ans}个。`;
+  }
+  else if(t==='div_challenge'){
+    // 除法挑战题（等分概念）
+    const per=[2,3,4,5][rand(0,3)];
+    const groups=rand(2,6);
+    const total=per*groups;
+    q.sub='⭐挑战题';
+    q.img='🍬';
+    q.question=`【挑战题】把${total}颗糖平均分给${groups}个小朋友，每人分到几颗？`;
+    q.answer=String(per);
+    q.options=genNumOpts(per,4,1,10);
+    q.explain=`平均分配：${total}÷${groups}=${per}颗，每个小朋友分到${per}颗。这是除法，二年级下册会学到哦~`;
+    q.challenge=true;
+  }
+  return q;
+}
+function genNumOpts(ans,n,min,max){
+  const s=new Set([String(ans)]);
+  while(s.size<n){
+    let v=ans+[1,-1,2,-2,3,-3,10,-10][Math.floor(Math.random()*8)];
+    if(v>=min&&v<=max) s.add(String(v));
+  }
+  return shuffleArr([...s]);
+}
+
+/* ========== 选题器（含错题重练） ========== */
+function qKey(q){ return q.gen ? ('g:'+q.genType) : q.id; }
+function pickQuestion(){
+  // 错题池：streak<2 的题，在后续局里优先重现
+  const wrongIds = Object.keys(store.wrongPool).filter(id=>{
+    const it=store.wrongPool[id];
+    return it && it.streak<2;
+  });
+  
+  let q = null;
+  let isWrongQ = false;
+  
+  if(wrongIds.length>0 && Math.random()<0.5){
+    // 50%概率优先抽错题（高频重现）
+    const id = wrongIds[Math.floor(Math.random()*wrongIds.length)];
+    if(id.indexOf('g:')===0){
+      // 生成题：按原题型重新生成一道同类型新题
+      q = genMathQ(id.slice(2));
+    } else {
+      q = STATIC_Q.find(x=>x.id===id) || null;
+    }
+    if(q) isWrongQ = true;
+  }
+  
+  if(!q){
+    // 55% 数学生成题，45% 静态题
+    if(Math.random()<0.55) q = genMathQ();
+    else q = STATIC_Q[Math.floor(Math.random()*STATIC_Q.length)];
+  }
+  return {q, isWrongQ};
+}
+
+/* ========== DOM 引用 ========== */
+const $ = id=>document.getElementById(id);
+const home=$('home'), quiz=$('quiz'), game=$('game');
+const scoreVal=$('scoreVal'), lenVal=$('lenVal'), bonusVal=$('bonusVal');
+const board=$('board'), ctx=board.getContext('2d');
+const quizBadge=$('quizBadge'), quizImg=$('quizImg'), quizText=$('quizText');
+const quizOptions=$('quizOptions'), quizFeedback=$('quizFeedback');
+const skipBtn=$('skipBtn'), nextBtn=$('nextBtn'), retryBtn=$('retryBtn'), starsRain=$('starsRain');
+let wrongStreak = 0; // 连续答错次数，防卡死用
+const highScoreEl=$('highScore'), totalAnsweredEl=$('totalAnswered'), accRateEl=$('accRate');
+const pauseBtn=$('pauseBtn'), pauseOverlay=$('pauseOverlay');
+const overOverlay=$('overOverlay'), wrongBadge=$('wrongBadge');
+const curDirEl=$('curDir');
+const curDirLandEl=$('curDirLand');
+function updateDirArrow(nd){
+  const arr={up:'↑',down:'↓',left:'←',right:'→'};
+  const sym=arr[nd];
+  curDirEl.textContent=sym;
+  if(curDirLandEl) curDirLandEl.textContent=sym;
+}
+
+/* ========== 首页逻辑 ========== */
+let curDiff='medium';
+function refreshStats(){
+  highScoreEl.textContent=store.highScore;
+  totalAnsweredEl.textContent=store.totalAnswered;
+  accRateEl.textContent=store.totalAnswered?Math.round(store.totalCorrect/store.totalAnswered*100)+'%':'0%';
+}
+refreshStats();
+document.querySelectorAll('.diff-card').forEach(c=>{
+  c.addEventListener('click',()=>{
+    document.querySelectorAll('.diff-card').forEach(x=>x.classList.remove('selected'));
+    c.classList.add('selected');
+    curDiff=c.dataset.diff;
+  });
+});
+$('startBtn').addEventListener('click',()=>{
+  if(inputLock)return;
+  showQuiz();
+});
+
+/* ========== 答题逻辑 ========== */
+let curQ=null;
+let inputLock=false; // 交互锁：防止弹窗切换瞬间的300ms延迟点击穿透
+function lockInput(ms=380){
+  inputLock=true;
+  clearTimeout(lockInput._t);
+  lockInput._t=setTimeout(()=>{inputLock=false;},ms);
+}
+function showQuiz(resetStreak=true){
+  if(resetStreak) wrongStreak = 0;
+  lockInput();
+  home.style.display='none';
+  game.classList.remove('show');
+  quiz.style.display='flex';
+  quizFeedback.style.display='none';
+  quizFeedback.className='feedback';
+  nextBtn.style.display='none';
+  skipBtn.style.display='none';
+  retryBtn.style.display='none';
+  quizOptions.innerHTML='';
+  gameState.bonusStart=0;
+  
+  const {q, isWrongQ} = pickQuestion();
+  curQ = q;
+  
+  // 徽章
+  quizBadge.textContent = q.challenge?'⭐ 挑战题':(q.sub?`📚 ${q.cat}·${q.sub}`:`📚 ${q.cat}`);
+  quizBadge.className = 'quiz-badge'+(q.challenge?' challenge':'');
+  
+  // 题目
+  quizImg.textContent = q.img||'';
+  quizImg.style.display = q.img?'block':'none';
+  quizText.textContent = q.question;
+  
+  // 选项
+  q.options.forEach((opt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='opt-btn';
+    btn.textContent=opt;
+    btn.addEventListener('click',()=>answerQuiz(opt,btn));
+    quizOptions.appendChild(btn);
+  });
+  
+  // 错题提醒
+  if(isWrongQ){
+    wrongBadge.classList.add('show');
+    setTimeout(()=>wrongBadge.classList.remove('show'),1800);
+  }
+}
+
+function answerQuiz(choice, btn){
+  if(inputLock) return;
+  // 锁定直到反馈显示完，避免重复点击
+  if(quizFeedback.style.display==='block') return; // 已经答过就忽略
+  const correct = String(choice)===String(curQ.answer);
+  const wk = qKey(curQ);
+  store.totalAnswered++;
+  
+  // 禁用所有选项
+  quizOptions.querySelectorAll('.opt-btn').forEach(b=>{
+    b.disabled=true;
+    if(String(b.textContent)===String(curQ.answer)) b.classList.add('correct');
+  });
+  
+  if(correct){
+    btn.classList.add('correct');
+    store.totalCorrect++;
+    showFeedback(true);
+    shootStars();
+    // 错题池处理：连续答对2次移除
+    if(store.wrongPool[wk]){
+      store.wrongPool[wk].streak++;
+      if(store.wrongPool[wk].streak>=2) delete store.wrongPool[wk];
+    }
+    // 答对获得5分奖励
+    gameState.bonusStart = 5;
+  } else {
+    btn.classList.add('wrong');
+    showFeedback(false);
+    wrongStreak++;
+    // 加入错题池（错题在后续局里被优先抽中重现）
+    if(!store.wrongPool[wk]){
+      store.wrongPool[wk]={streak:0};
+    } else {
+      store.wrongPool[wk].streak=0; // 答错重置连击
+    }
+  }
+  saveStore();
+  refreshStats();
+  
+  // 根据对错决定显示哪个按钮
+  if(correct){
+    nextBtn.style.display='block';     // 答对 → 开始游戏
+    retryBtn.style.display='none';
+    skipBtn.style.display='none';
+  }else{
+    nextBtn.style.display='none';
+    retryBtn.style.display='block';    // 答错 → 换一道题再试
+    // 连续答错2次以上，给出"先去玩蛇"兜底出口，避免孩子卡死
+    skipBtn.style.display = (wrongStreak>=2) ? 'block' : 'none';
+  }
+}
+
+function showFeedback(correct){
+  quizFeedback.style.display='block';
+  if(correct){
+    quizFeedback.className='feedback right';
+    quizFeedback.innerHTML=`<span class="emoji">🌟</span>太棒了！答对啦！<br><span style="font-weight:400;font-size:13px;opacity:.85">${curQ.explain}</span>`;
+  }else{
+    quizFeedback.className='feedback wrong';
+    quizFeedback.innerHTML=`<span class="emoji">💡</span>正确答案是"${curQ.answer}"<br><span style="font-weight:400;font-size:13px;opacity:.85">${curQ.explain}</span>`;
+  }
+}
+
+function shootStars(){
+  const emojis=['⭐','🌟','✨','🎉','💫'];
+  for(let i=0;i<12;i++){
+    const s=document.createElement('div');
+    s.className='star-particle';
+    s.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    const rect=quizFeedback.getBoundingClientRect();
+    const startX=rect.left+rect.width/2;
+    const startY=rect.top;
+    s.style.left=startX+'px';
+    s.style.top=startY+'px';
+    const angle=(Math.random()*2-1)*Math.PI;
+    const dist=80+Math.random()*120;
+    s.style.setProperty('--dx',Math.cos(angle)*dist+'px');
+    s.style.setProperty('--dy',(Math.sin(angle)*dist-100)+'px');
+    s.style.position='fixed';
+    s.style.zIndex=200;
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),1300);
+  }
+}
+
+skipBtn.addEventListener('click',e=>{
+  if(inputLock){e.stopPropagation();return;}
+  lockInput();
+  gameState.bonusStart=0;startGame();
+});
+nextBtn.addEventListener('click',e=>{
+  if(inputLock){e.stopPropagation();return;}
+  lockInput();
+  startGame();
+});
+retryBtn.addEventListener('click',e=>{
+  if(inputLock){e.stopPropagation();return;}
+  lockInput();
+  // 换一道新题，但保留连续答错计数（连错2次后会出现"先去玩蛇"兜底出口）
+  showQuiz(false);
+});
+// 选项按钮也要防穿透：动态创建时在 answerQuiz 入口加锁判断
+
+/* ========== 游戏核心 ========== */
+const gameState={
+  snake:[],dir:'right',nextDir:'right',dirQueue:[],
+  food:null,obstacles:[],
+  score:0,cols:15,rows:20,speed:150,hasObstacle:false,
+  bonusStart:0,
+  running:false,paused:false,
+  lastMove:0,rafId:null,
+  cellSize:0,offsetX:0,offsetY:0
+};
+
+function startGame(){
+  lockInput();
+  quiz.style.display='none';
+  home.style.display='none';
+  game.classList.add('show');
+  overOverlay.classList.remove('show');  // 关键：隐藏上局的结束弹窗
+  pauseOverlay.classList.remove('show'); // 隐藏暂停弹窗
+  pauseBtn.style.display='flex';
+  
+  const cfg=DIFFICULTY[curDiff];
+  const dims = isLandscape() ? cfg.landscape : cfg.portrait;
+  gameState.cols=dims[0];
+  gameState.rows=dims[1];
+  gameState.speed=cfg.speed;
+  gameState.hasObstacle=cfg.obstacle;
+  gameState.dir='right';
+  gameState.nextDir='right';
+  gameState.dirQueue=[];  // 方向队列，支持连按
+  gameState.score=0;
+  gameState.paused=false;
+  gameState.warmupMoves = 6; // 前6步为热身保护，不加速
+  gameState.bonusStart = gameState.bonusStart||0;
+  bonusVal.textContent=gameState.bonusStart;
+  
+  // 蛇初始位置：横向1/4处、纵向居中，离四边都有充足空间
+  const startX = 2;
+  const midY=Math.floor(gameState.rows/2);
+  gameState.snake=[{x:startX,y:midY},{x:startX-1,y:midY},{x:startX-2,y:midY}];
+  
+  // 障碍物
+  gameState.obstacles=[];
+  if(cfg.obstacle){
+    const n=Math.floor(gameState.cols*gameState.rows*0.04);
+    for(let i=0;i<n;i++){
+      let ox,oy,tries=0;
+      do{
+        ox=randInt(2,gameState.cols-3);
+        oy=randInt(2,gameState.rows-3);
+        tries++;
+      }while(tries<30 && (gameState.snake.some(s=>s.x===ox&&s.y===oy)||gameState.obstacles.some(o=>o.x===ox&&o.y===oy)));
+      gameState.obstacles.push({x:ox,y:oy});
+    }
+  }
+  
+  // 首颗食物放在蛇前方3格，方便孩子第一口顺利吃到
+  const dHead=DIR[gameState.dir];
+  const foodX=startX+3;
+  gameState.nextFoodPref={x:foodX,y:midY};
+  placeFood();
+  // 等浏览器完成布局后再量尺寸（尤其切换横竖屏/首次显示时）
+  requestAnimationFrame(()=>{
+    resizeCanvas();
+    drawBoard();
+  });
+  updateHUD();
+  updateDirArrow('right');
+  
+  gameState.running=true;
+  gameState.lastMove=performance.now();
+  if(gameState.rafId) cancelAnimationFrame(gameState.rafId);
+  loop();
+}
+
+function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+
+function placeFood(){
+  let x,y,tries=0;
+  // 如果有推荐位置（首颗食物放在蛇前方方便吃到），优先使用
+  if(gameState.nextFoodPref){
+    const p=gameState.nextFoodPref;
+    gameState.nextFoodPref=null;
+    if(p.x>=0&&p.x<gameState.cols&&p.y>=0&&p.y<gameState.rows
+       && !gameState.snake.some(s=>s.x===p.x&&s.y===p.y)
+       && !gameState.obstacles.some(o=>o.x===p.x&&o.y===p.y)){
+      gameState.food={x:p.x,y:p.y,emoji:FOOD_EMOJI[Math.floor(Math.random()*FOOD_EMOJI.length)]};
+      return;
+    }
+  }
+  do{
+    x=randInt(0,gameState.cols-1);
+    y=randInt(0,gameState.rows-1);
+    tries++;
+  }while(tries<100 && (
+    gameState.snake.some(s=>s.x===x&&s.y===y)||
+    gameState.obstacles.some(o=>o.x===x&&o.y===y)
+  ));
+  gameState.food={x,y,emoji:FOOD_EMOJI[Math.floor(Math.random()*FOOD_EMOJI.length)]};
+}
+
+function resizeCanvas(){
+  const wrap=board.parentElement;
+  const wrapRect=wrap.getBoundingClientRect();
+  const maxW=wrapRect.width;
+  const maxH=wrapRect.height;
+  // 竖屏：宽度优先撑满（若按宽算出来高度超出则回退到高度）
+  // 横屏：高度优先撑满（棋盘横向居中，两侧放方向键）
+  let cell;
+  const cellByW=Math.floor(maxW/gameState.cols);
+  const cellByH=Math.floor(maxH/gameState.rows);
+  if(isLandscape()){
+    // 横屏：高度优先，但不要超出宽度
+    cell=Math.max(12,Math.min(cellByH, cellByW));
+    // 如果高度有富余而宽度紧张，优先保证宽度
+    if(cell*gameState.cols > maxW) cell = Math.max(12, cellByW);
+  }else{
+    // 竖屏：宽度优先
+    if(cellByW*gameState.rows <= maxH){
+      cell = Math.max(12, cellByW);
+    }else{
+      cell = Math.max(12, cellByH);
+    }
+  }
+  gameState.cellSize=cell;
+  const w=cell*gameState.cols;
+  const h=cell*gameState.rows;
+  const dpr=window.devicePixelRatio||1;
+  board.style.width=w+'px';
+  board.style.height=h+'px';
+  board.width=w*dpr;
+  board.height=h*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  gameState.offsetX=0;
+  gameState.offsetY=0;
+}
+
+function updateHUD(){
+  scoreVal.textContent=gameState.score;
+  lenVal.textContent=gameState.snake.length;
+}
+
+function loop(now){
+  if(!gameState.running) return;
+  now = now||performance.now();
+  if(!gameState.paused){
+    if(now-gameState.lastMove>=gameState.speed){
+      moveSnake();
+      gameState.lastMove=now;
+    }
+  }
+  drawBoard();
+  gameState.rafId=requestAnimationFrame(loop);
+}
+
+function moveSnake(){
+  // 从方向队列里取下一个有效方向
+  while(gameState.dirQueue && gameState.dirQueue.length){
+    const cand = gameState.dirQueue.shift();
+    const opp={up:'down',down:'up',left:'right',right:'left'};
+    if(opp[cand]!==gameState.dir && cand!==gameState.dir){
+      gameState.dir=cand;
+      break;
+    }
+  }
+  gameState.nextDir=gameState.dir;
+  const head=gameState.snake[0];
+  const d=DIR[gameState.dir];
+  const nx=head.x+d[0], ny=head.y+d[1];
+  
+  // 撞墙
+  if(nx<0||nx>=gameState.cols||ny<0||ny>=gameState.rows){gameOver();return;}
+  // 撞自己
+  if(gameState.snake.some((s,i)=>i<gameState.snake.length-1&&s.x===nx&&s.y===ny)){gameOver();return;}
+  // 撞障碍物
+  if(gameState.obstacles.some(o=>o.x===nx&&o.y===ny)){gameOver();return;}
+  
+  const newHead={x:nx,y:ny};
+  gameState.snake.unshift(newHead);
+  
+  // 吃食物
+  if(gameState.food && nx===gameState.food.x && ny===gameState.food.y){
+    gameState.score+=10;
+    // 热身保护期（前6步）不加速，给孩子反应时间
+    if(gameState.warmupMoves>0){
+      gameState.warmupMoves--;
+    }else{
+      const speedUp = cfg.speedStep;
+      gameState.speed = Math.max(cfg.minSpeed, gameState.speed - speedUp);
+    }
+    placeFood();
+    updateHUD();
+  } else {
+    gameState.snake.pop();
+  }
+}
+
+function drawBoard(){
+  const cell=gameState.cellSize;
+  const w=cell*gameState.cols, h=cell*gameState.rows;
+  
+  // 背景
+  ctx.fillStyle=gameState.hasObstacle?'#f1f8e9':'#e8f5e9';
+  ctx.fillRect(0,0,w,h);
+  
+  // 网格
+  ctx.strokeStyle='rgba(100,150,100,0.08)';
+  ctx.lineWidth=1;
+  for(let i=0;i<=gameState.cols;i++){
+    ctx.beginPath();ctx.moveTo(i*cell,0);ctx.lineTo(i*cell,h);ctx.stroke();
+  }
+  for(let i=0;i<=gameState.rows;i++){
+    ctx.beginPath();ctx.moveTo(0,i*cell);ctx.lineTo(w,i*cell);ctx.stroke();
+  }
+  
+  // 障碍物
+  if(gameState.obstacles.length){
+    ctx.font=`${cell*0.85}px sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    gameState.obstacles.forEach(o=>{
+      ctx.fillText(OBSTACLE_EMOJI, o.x*cell+cell/2, o.y*cell+cell/2+1);
+    });
+  }
+  
+  // 食物
+  if(gameState.food){
+    ctx.font=`${cell*0.9}px sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(gameState.food.emoji, gameState.food.x*cell+cell/2, gameState.food.y*cell+cell/2+1);
+  }
+  
+  // 蛇
+  gameState.snake.forEach((s,i)=>{
+    const x=s.x*cell, y=s.y*cell;
+    const pad=Math.max(1,cell*0.08);
+    const r=Math.max(3,cell*0.25);
+    if(i===0){
+      // 头
+      ctx.fillStyle=SNAKE_HEAD_COLOR;
+      roundRect(ctx,x+pad,y+pad,cell-pad*2,cell-pad*2,r,true);
+      // 眼睛
+      ctx.fillStyle='#fff';
+      const eyeSize=Math.max(2,cell*0.13);
+      const eyeOff=cell*0.22;
+      let ex1,ey1,ex2,ey2;
+      if(gameState.dir==='right'){ex1=x+cell-eyeOff;ey1=y+eyeOff;ex2=x+cell-eyeOff;ey2=y+cell-eyeOff;}
+      else if(gameState.dir==='left'){ex1=x+eyeOff;ey1=y+eyeOff;ex2=x+eyeOff;ey2=y+cell-eyeOff;}
+      else if(gameState.dir==='up'){ex1=x+eyeOff;ey1=y+eyeOff;ex2=x+cell-eyeOff;ey2=y+eyeOff;}
+      else{ex1=x+eyeOff;ey1=y+cell-eyeOff;ex2=x+cell-eyeOff;ey2=y+cell-eyeOff;}
+      ctx.beginPath();ctx.arc(ex1,ey1,eyeSize,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(ex2,ey2,eyeSize,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#333';
+      ctx.beginPath();ctx.arc(ex1,ey1,eyeSize*0.5,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(ex2,ey2,eyeSize*0.5,0,Math.PI*2);ctx.fill();
+    }else{
+      // 身（渐变色）
+      const t = i/gameState.snake.length;
+      ctx.fillStyle=`hsl(${170-t*20},60%,${55-t*8}%)`;
+      roundRect(ctx,x+pad+1,y+pad+1,cell-pad*2-2,cell-pad*2-2,r-1,true);
+    }
+  });
+}
+
+function roundRect(ctx,x,y,w,h,r,fill){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+  if(fill) ctx.fill();
+}
+
+function gameOver(){
+  gameState.running=false;
+  cancelAnimationFrame(gameState.rafId);
+  const total=gameState.score+(gameState.bonusStart||0);
+  const isHigh=total>store.highScore;
+  if(isHigh) store.highScore=total;
+  saveStore();
+  refreshStats();
+  
+  $('overScore').textContent=total;
+  $('overLen').textContent=gameState.snake.length;
+  $('overHigh').textContent=store.highScore;
+  $('overEmoji').textContent=isHigh?'🏆':(total>=100?'🎉':total>=50?'😊':'🙂');
+  $('overTitle').textContent=isHigh?'新纪录！':(total>=100?'太棒了！':total>=50?'做得不错！':'再试一次');
+  $('overMsg').textContent=isHigh?'你创造了新的最高分，真厉害！':
+    (total>=100?'你的小蛇又长又灵活，知识掌握得也很棒！':
+     total>=50?'继续加油，再挑战一下更高分吧！':
+     '没关系，多练习几次就能变长啦～');
+  overOverlay.classList.add('show');
+  pauseBtn.style.display='none';
+}
+
+/* ========== 操作控制 ========== */
+function changeDir(nd){
+  if(!gameState.running || gameState.paused) return;
+  const opp={up:'down',down:'up',left:'right',right:'left'};
+  // 取最近方向做参考（队尾或当前方向），避免和最新方向反向
+  const ref = (gameState.dirQueue && gameState.dirQueue.length)
+    ? gameState.dirQueue[gameState.dirQueue.length-1]
+    : gameState.dir;
+  if(opp[nd]===ref) return; // 不能反向
+  if(nd===ref) return;
+  if(!gameState.dirQueue) gameState.dirQueue=[];
+  // 队列最多保留2个预输入方向，避免按太多导致延迟
+  if(gameState.dirQueue.length>=2) gameState.dirQueue.shift();
+  gameState.dirQueue.push(nd);
+  gameState.nextDir=nd;
+  updateDirArrow(nd);
+}
+
+// 防止点击/触摸穿透到弹窗下方：对 quiz 容器本身（空白区）和选项以外区域拦截事件
+// 规则：只有点到 .opt-btn/.next-btn/.retry-btn/.skip-btn/.diff-btn（按钮类）才放行，其他一律拦截
+const isInteractive = el => el.closest && el.closest('button, .opt-btn, a, input, select');
+['touchstart','touchend','mousedown','click'].forEach(ev=>{
+  quiz.addEventListener(ev,e=>{
+    if(!isInteractive(e.target)){
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  },{passive:false});
+});
+
+// 虚拟按键（防止touchstart和mousedown双触发）
+document.querySelectorAll('.dpad-btn[data-dir]').forEach(b=>{
+  let justTouched=false;
+  const touchHandler=(e)=>{
+    if(!gameState.running) return; // 游戏未开始/弹窗显示时不响应
+    e.preventDefault();
+    justTouched=true;
+    changeDir(b.dataset.dir);
+    setTimeout(()=>{justTouched=false;},350);
+  };
+  const mouseHandler=(e)=>{
+    if(!gameState.running) return;
+    e.preventDefault();
+    if(justTouched) return; // 刚触发过触摸，跳过鼠标事件
+    changeDir(b.dataset.dir);
+  };
+  b.addEventListener('touchstart',touchHandler,{passive:false});
+  b.addEventListener('mousedown',mouseHandler);
+});
+
+// 键盘
+window.addEventListener('keydown',e=>{
+  if(!gameState.running) return;
+  const map={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',s:'down',a:'left',d:'right',W:'up',S:'down',A:'left',D:'right'};
+  if(map[e.key]){e.preventDefault();changeDir(map[e.key]);}
+  if(e.key===' '){e.preventDefault();togglePause();}
+});
+
+// 滑动
+let touchStart=null;
+board.addEventListener('touchstart',e=>{
+  if(!gameState.running) return; // 游戏未开始/弹窗显示时不响应滑动
+  if(e.touches.length===1){touchStart={x:e.touches[0].clientX,y:e.touches[0].clientY,t:Date.now()};}
+},{passive:true});
+board.addEventListener('touchmove',e=>{
+  if(!gameState.running) return;
+  e.preventDefault();
+},{passive:false});
+board.addEventListener('touchend',e=>{
+  if(!gameState.running){touchStart=null;return;}
+  if(!touchStart)return;
+  const t=e.changedTouches[0];
+  const dx=t.clientX-touchStart.x, dy=t.clientY-touchStart.y;
+  const adx=Math.abs(dx),ady=Math.abs(dy);
+  if(Math.max(adx,ady)<20){touchStart=null;return;}
+  if(adx>ady) changeDir(dx>0?'right':'left');
+  else changeDir(dy>0?'down':'up');
+  touchStart=null;
+},{passive:true});
+
+// 暂停
+function togglePause(){
+  if(!gameState.running)return;
+  gameState.paused=!gameState.paused;
+  pauseOverlay.classList.toggle('show',gameState.paused);
+  pauseBtn.textContent=gameState.paused?'▶':'⏸';
+  if(!gameState.paused) gameState.lastMove=performance.now();
+}
+pauseBtn.addEventListener('click',()=>{if(inputLock)return;togglePause();});
+$('resumeBtn').addEventListener('click',()=>{if(inputLock)return;togglePause();});
+$('quitBtn').addEventListener('click',()=>{
+  if(inputLock)return;
+  lockInput();
+  gameState.running=false;
+  gameState.paused=false;
+  cancelAnimationFrame(gameState.rafId);
+  pauseOverlay.classList.remove('show');
+  overOverlay.classList.remove('show');
+  game.classList.remove('show');
+  quiz.style.display='none';
+  home.style.display='flex';
+  pauseBtn.style.display='none';
+  refreshStats();
+  gameState.bonusStart=0;
+});
+$('homeBtn').addEventListener('click',()=>{
+  if(inputLock)return;
+  lockInput();
+  overOverlay.classList.remove('show');
+  game.classList.remove('show');
+  home.style.display='flex';
+  pauseBtn.style.display='none';
+  gameState.bonusStart=0;
+});
+$('againBtn').addEventListener('click',()=>{
+  if(inputLock)return;
+  overOverlay.classList.remove('show');
+  showQuiz();
+});
+
+// 尺寸变化
+window.addEventListener('resize',()=>{
+  if(gameState.running) resizeCanvas();
+});
+window.addEventListener('orientationchange',()=>{
+  setTimeout(()=>{if(gameState.running)resizeCanvas();},200);
+});
+
+// 防止双击缩放、长按菜单
+document.addEventListener('gesturestart',e=>e.preventDefault());
+document.addEventListener('dblclick',e=>e.preventDefault());
+document.addEventListener('contextmenu',e=>{if(e.target.closest('#game,#quiz'))e.preventDefault();});
+
+})();
+</script>
+</body>
+</html>
